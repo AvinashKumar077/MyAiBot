@@ -8,7 +8,18 @@
 
 This is an AI ChatBot application built using Kotlin and Jetpack Compose. The application allows users to input text or select an image, which is then processed by an AI model to generate a response. The user can interact with the bot through a simple, intuitive chat interface, and the application also supports image-based queries.
 
-### 3. **Features**
+### 3. **Screen Shots**
+   
+<p align="center">
+  <img src="ss/1.jpg" height="420" style="margin-right: 30px;">
+  <img src="ss/2.jpg" height="420" style="margin-right: 30px;">
+  <img src="ss/3.jpg" height="420" style="margin-right: 30px;">
+  <img src="ss/4.jpg" height="420" style="margin-right: 30px;">
+  <img src="ss/5.jpg" height="420">
+</p>
+   
+
+### 4. **Features**
 
 - Text-based chat interaction with AI.
 - Image-based input for generating AI responses.
@@ -17,30 +28,6 @@ This is an AI ChatBot application built using Kotlin and Jetpack Compose. The ap
 - Clean, responsive UI built with Jetpack Compose.
 - Supports selecting images from the device gallery.
 
-### 4. **Project Structure**
-
-```
-├── app
-│   ├── manifests
-│   │   └── AndroidManifest.xml
-│   ├── kotlin+java
-│   │   └── com.example.aichatbot
-│   │       ├── model
-│   │       │   ├── Chat.kt
-│   │       │   └── ChatData.kt
-│   │       ├── ui.theme
-│   │       │   ├── Color.kt
-│   │       │   ├── Theme.kt
-│   │       │   └── Type.kt
-│   │       ├── utilities
-│   │       │   └── CommonUtilities.kt
-│   │       ├── view
-│   │       │   └── MainActivity.kt
-│   │       └── viewmodel
-│   │           ├── ChatState.kt
-│   │           ├── ChatUIEvent.kt
-│   │           └── ChatViewModel.kt
-```
 
 ### 5. **Installation**
 
@@ -79,24 +66,5 @@ This is an AI ChatBot application built using Kotlin and Jetpack Compose. The ap
 - **State Management:** Jetpack ViewModel, StateFlow
 - **API:** Gemini AI 
 
-### 8. **Screenshots**
 
-(Include screenshots of the application running, highlighting key features like text input, image selection, and chat interaction.)
-
-### 9. **Contributing**
-
-1. **Fork the repository.**
-2. **Create a new branch:**
-   ```bash
-   git checkout -b feature-name
-   ```
-3. **Make your changes and commit them:**
-   ```bash
-   git commit -m 'Add some feature'
-   ```
-4. **Push to the branch:**
-   ```bash
-   git push origin feature-name
-   ```
-5. **Submit a pull request.**
 
