@@ -3,15 +3,25 @@ package com.example.aichatbot.view
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -21,10 +31,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
@@ -39,6 +55,7 @@ import com.example.aichatbot.R
 import com.example.aichatbot.ui.theme.AIChatBotTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlin.math.round
 
 class MainActivity : ComponentActivity() {
 
@@ -48,11 +65,12 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
         uri?.let {
-            Log.d("MainActivity", "Image URI selected: $it")
+            Log.d("com.example.aichatbot.view.MainActivity", "Image URI selected: $it")
             uriState.value = it.toString() // Update to string URI
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -68,13 +86,15 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .background(MaterialTheme.colorScheme.primary)
-                                    .height(35.dp)
-                                    .padding(horizontal = 16.dp)
+                                    .height(100.dp)
+                                    .padding( horizontal = 16.dp)
                             ) {
                                 Text(
-                                    modifier = Modifier.align(Alignment.TopStart),
-                                    text = "AI ChatBot",
-                                    fontSize = 19.sp,
+                                    modifier = Modifier.align(Alignment.CenterStart),
+                                    text = "My Ai ChatBot",
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontStyle = MaterialTheme.typography.titleLarge.fontStyle,
                                     color = MaterialTheme.colorScheme.onPrimary
                                 )
                             }
@@ -87,6 +107,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     @Composable
     fun ChatScreen(paddingValues: PaddingValues) {
         val chatViewModel = viewModel<ChatViewModel>()
@@ -132,7 +153,7 @@ class MainActivity : ComponentActivity() {
                     if (bitmap != null) {
                         Image(
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(50.dp)
                                 .padding(bottom = 2.dp)
                                 .clip(RoundedCornerShape(6.dp)),
                             contentDescription = "picked image",
@@ -142,7 +163,7 @@ class MainActivity : ComponentActivity() {
                     }
                     Icon(
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(30.dp)
                             .clickable {
                                 imagePicker.launch(
                                     PickVisualMediaRequest
@@ -159,19 +180,28 @@ class MainActivity : ComponentActivity() {
                 Spacer(modifier = Modifier.width(8.dp))
 
                 TextField(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp)),
+                    shape = RoundedCornerShape(12.dp),
                     value = chatState.prompt,
                     onValueChange = {
                         chatViewModel.onEvent(ChatUIEvent.UpdatePrompt(it))
                     },
                     placeholder = {
                         Text(text = "Enter your prompt")
-                    }
+                    },
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.Transparent, // Hide the underline when focused
+                        unfocusedIndicatorColor = Color.Transparent // Hide the underline when unfocused
+                    )
                 )
+
 
                 Icon(
                     modifier = Modifier
-                        .size(40.dp)
+                        .padding(6.dp)
+                        .size(30.dp)
                         .clickable {
                             chatViewModel.onEvent(ChatUIEvent.SendPrompt(chatState.prompt, bitmap))
                             uriState.update { "" }
@@ -214,10 +244,53 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     @Composable
     fun ModelChatItem(response: String) {
+        val context = LocalContext.current
+        val clipboardManager = LocalClipboardManager.current
+        var showToast by remember { mutableStateOf(false) }
+        var toast: Toast? = null
+
         Column(
-            modifier = Modifier.padding(end = 100.dp, bottom = 16.dp)
+            modifier = Modifier
+                .padding(end = 100.dp, bottom = 16.dp)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onLongPress = {
+                            // Copy text to clipboard
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            clipboard.setPrimaryClip(ClipData.newPlainText("Copied Text", response))
+                            showToast = true
+
+                            // Trigger a short vibration
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                // For Android 12 (API level 31) and above
+                                val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                                val vibrator = vibratorManager.defaultVibrator
+                                vibrator.vibrate(
+                                    VibrationEffect.createOneShot(
+                                        100, VibrationEffect.DEFAULT_AMPLITUDE
+                                    )
+                                )
+                            } else {
+                                // For older Android versions
+                                val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+                                vibrator.vibrate(
+                                    VibrationEffect.createOneShot(
+                                        100, VibrationEffect.DEFAULT_AMPLITUDE
+                                    )
+                                )
+                            }
+
+                            // Show toast
+                            toast?.cancel()
+                            toast = Toast.makeText(context, "Text copied to clipboard", Toast.LENGTH_SHORT).also {
+                                it.show()
+                            }
+                        }
+                    )
+                }
         ) {
             Text(
                 modifier = Modifier
@@ -227,10 +300,14 @@ class MainActivity : ComponentActivity() {
                     .padding(16.dp),
                 text = response,
                 fontSize = 17.sp,
-                color = MaterialTheme.colorScheme.onTertiary
+                color = MaterialTheme.colorScheme.onTertiary,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Start
             )
         }
     }
+
+
 
     @Composable
     private fun getBitmap(): Bitmap? {
